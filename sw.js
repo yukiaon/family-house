@@ -3,7 +3,7 @@
 // - ハウスの値・箱数・病害虫（Supabase）は端末に置かない。いつも最新を取りに行く
 // - 画面は「まずネット → だめなら端末の分」。直したら次に開いたときに新しい画面になる
 // 画面のファイルを増やしたら SHELL に足し、CACHE の版を上げる
-const CACHE = 'family-house-v1';
+const CACHE = 'family-house-v2';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {

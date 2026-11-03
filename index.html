@@ -92,6 +92,12 @@
   .pin { position: absolute; width: 44px; height: 44px; margin: -22px 0 0 -22px; border: 0; padding: 0; background: transparent; display: grid; place-items: center; border-radius: 50%; }
   .pin span { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,.3); display: grid; place-items: center; font-size: 14px; font-weight: 800; color: #fff; text-shadow: 0 1px 3px #000; }
   .pin.old span { opacity: .5; }
+  .area-bands { display: grid; gap: 10px; margin-top: 14px; }
+  .area-band { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 60px; padding: 12px 16px; text-align: left; color: var(--ink);
+    border: 2px solid var(--band); border-radius: 16px; background: var(--card); background: color-mix(in srgb, var(--band) 16%, var(--card)); }
+  .area-band i { width: 22px; height: 22px; flex: 0 0 auto; border-radius: 50%; background: var(--band); border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+  .area-band b { display: block; font-size: 22px; line-height: 1.4; }
+  .area-band span { display: block; color: var(--sub); font-size: 18px; }
   .legend { display: flex; flex-wrap: wrap; gap: 10px 16px; margin-top: 20px; font-size: 19px; }
   .legend i { display: inline-block; width: 16px; height: 16px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; border: 1px solid var(--sub); }
   .records { margin-top: 24px; border-top: 1px solid var(--line); }
@@ -156,6 +162,7 @@
   <section class="card" id="pestCard" aria-labelledby="pestTitle">
     <div class="section-head"><span class="section-icon" aria-hidden="true">🔎</span><h2 id="pestTitle">病気・害虫の場所</h2></div>
     <div class="muted" id="pestNote">読み込み中…</div>
+    <div class="area-bands" id="areaBands"></div>
     <div class="map-wrap" id="mapWrap">
       <svg id="mapSvg" viewBox="0 0 500 600" aria-hidden="true"></svg>
     </div>
@@ -376,16 +383,19 @@ async function loadPests() {
   if (!crops.length) return { crop: null, obs: [] };
   const id = encodeURIComponent(crops[0].id);
   const obs = await rest(FARM_URL, FARM_KEY,
-    `pest_observations?select=id,observed_at,house,aisle,section_zone,section_no,pest_id,pest_name,severity&cropping_id=eq.${id}&resolved_at=is.null&order=observed_at.desc&limit=500`);
+    `pest_observations?select=id,observed_at,house,aisle,section_zone,section_no,pest_id,pest_name,severity,scope&cropping_id=eq.${id}&resolved_at=is.null&order=observed_at.desc&limit=500`);
   return { crop: crops[0], obs };
 }
 function pestInfo(o) {
   const p = PESTS[o.pest_id];
   return { name: p ? p[0] : (o.pest_name || 'その他'), color: p ? p[1] : PESTS.other[1] };
 }
+// 棟全体・全棟の記録（pest-map の「この棟全体」「全棟」。scope = 'house' | 'all'。区画がない）
+// 全棟は棟ごとに 1 行ずつ、同じ日時で入っている。scope が無い古い行は区画が空なら棟全体とみなす
+function isArea(o) { return o.scope === 'house' || o.scope === 'all' || (!o.scope && !o.aisle); }
 function placeText(o) {
   // 棟全体・全棟の記録は区画がない（pest-map の「この棟全体」「全棟」）
-  if (!o.aisle) return o._all ? '全部の棟の全体' : `${o.house}の全体`;
+  if (isArea(o)) return o._all ? '全部の棟の全体' : `${o.house}の全体`;
   const zone = o.section_zone === 'front' ? '前' : '後ろ';
   return `${o.house}・${AISLE_LABEL[o.aisle] || '通路'}・${zone}の${o.section_no}番目`;
 }
@@ -431,15 +441,30 @@ function renderPests({ crop, obs }) {
   drawMapBase();
   const wrap = $('mapWrap');
   wrap.querySelectorAll('.pin').forEach((p) => p.remove());
-  $('legend').replaceChildren(); $('pestList').replaceChildren();
+  $('legend').replaceChildren(); $('pestList').replaceChildren(); $('areaBands').replaceChildren();
   if (!crop) { $('pestNote').textContent = '今の作付けが見つかりません。'; return; }
   if (!obs.length) { $('pestNote').textContent = '今は出ていません。'; return; }
 
-  // 棟全体・全棟の記録は印にせず、棟を薄く塗る。全棟は棟ごとの5行が同じ日時で入っている
-  const areaObs = obs.filter((o) => !o.aisle);
+  // 棟全体・全棟の記録は印にせず、棟を薄く塗り、マップの上に帯を出す（帯はタップで詳しく）
+  const areaObs = obs.filter(isArea);
   const areaCount = new Map();
   for (const o of areaObs) { const k = `${o.pest_id}|${o.observed_at}`; areaCount.set(k, (areaCount.get(k) || 0) + 1); }
-  for (const o of areaObs) o._all = areaCount.get(`${o.pest_id}|${o.observed_at}`) >= HOUSES.length;
+  for (const o of areaObs) o._all = o.scope === 'all' || (!o.scope && areaCount.get(`${o.pest_id}|${o.observed_at}`) >= HOUSES.length);
+  const bandSeen = new Set();
+  for (const o of areaObs) {
+    const k = o._all ? `all|${o.pest_id}|${o.observed_at}` : o.id;
+    if (bandSeen.has(k)) continue;
+    bandSeen.add(k);
+    const info = pestInfo(o);
+    const where = o._all ? '全部の棟' : `${o.house}の全体`;
+    const band = el('button', { type: 'button', class: 'area-band', style: `--band:${info.color}` });
+    const text = el('div');
+    text.append(el('b', {}, `${where}に${info.name}`),
+      el('span', {}, `${fmtDate(o.observed_at)}${SEVERITY[o.severity] ? `・量：${SEVERITY[o.severity]}` : ''}`));
+    band.append(el('i'), text);
+    band.addEventListener('click', () => openPin([o]));
+    $('areaBands').append(band);
+  }
   const svg = $('mapSvg');
   for (const o of areaObs) {
     const idx = HOUSES.findIndex(([db]) => db === o.house);
@@ -460,7 +485,7 @@ function renderPests({ crop, obs }) {
   }
   const kinds = new Set(obs.map((o) => pestInfo(o).name));
   const areaText = areaObs.length ? '色を塗った棟は、棟全体に出ています。' : '';
-  $('pestNote').textContent = `${kinds.size}種類${groups.size ? `・${groups.size}か所` : ''}。${areaText}印をタップすると名前と日付が出ます。`;
+  $('pestNote').textContent = `${kinds.size}種類${groups.size ? `・${groups.size}か所` : ''}。${areaText}${areaObs.length ? '帯や印' : '印'}をタップすると名前と日付が出ます。`;
 
   const now = Date.now();
   for (const g of groups.values()) {

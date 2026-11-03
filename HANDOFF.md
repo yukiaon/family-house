@@ -61,6 +61,7 @@ python3 -m http.server 8790 --directory ~/Documents/ai-workspace/agri-apps/famil
 | `MAP` / `houseRect` / `drawMapBase` | マップの枠・棟名・方位などの描画（SVG、viewBox 500×600） | ◯ 見た目は自由 |
 | `aisleX` / `pinPos` | 記録を地図上の位置にする計算（**pest-map と同じ比率**） | ✕ |
 | `renderPests` / `openPin` | 印の作成（同じ場所はまとめて件数表示）とタップ時のポップアップ（`<dialog>`） | ◯ 見た目は自由。中身は名前・日付・場所・量 |
+| `isArea` / `#areaBands` | 棟全体・全棟の記録（pest-map の `scope` = house / all。区画なし）。棟を薄く塗り、マップの上に帯（タップで詳しく）。全棟は棟ごとの 5 行を 1 本の帯・一覧 1 行にまとめる | ◯ 見た目は自由。判定は変えない |
 | `loadAll` | 3 つを並行で読む。5 分ごと＋画面に戻った時に読み直し | △ |
 
 ## 5. データ（読むだけ）
@@ -69,7 +70,7 @@ python3 -m http.server 8790 --directory ~/Documents/ai-workspace/agri-apps/famil
 |---|---|---|---|
 | 今のハウス | ① `gjagzyexefnxnkbgueza` | `rpc/get_environment_recent`（`p_hours: 1`、新しい順） | esp32_01=北の気温湿度 / 02=南 / 03=土 |
 | 今月の収穫 | ① | `rpc/get_harvest_month_summary`（**0040・2026-11-03 適用済み**） | `month` `this_boxes` `last_year_boxes` `last_year_source`(ja/diary) `last_recorded` |
-| 病害虫 | ② `jckjdfvoqsgqvhornnjs` | `croppings?is_active=eq.true` → `pest_observations?resolved_at=is.null` | 日時・棟・通路・前後・番目・種類・量 |
+| 病害虫 | ② `jckjdfvoqsgqvhornnjs` | `croppings?is_active=eq.true` → `pest_observations?resolved_at=is.null`（`scope` も読む） | 日時・棟・通路・前後・番目・種類・量 |
 
 - 0040 の SQL は `pepper-advisor/supabase/migrations/0040_family_harvest_month.sql`（PR #51 マージ済み）。計算は参謀の `getMonthVsLastYear` と同じ（午前+午後の箱数、去年は JA の kg ÷ 1箱あたり kg を優先）
 - 去年の数字は **1 か月分の合計**。月の途中で少なく見えるのは普通なので、「負けている」ように見せない
