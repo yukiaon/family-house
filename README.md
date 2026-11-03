@@ -1,14 +1,17 @@
 # ハウスのようす（family-house）
 
+公開: https://yukiaon.github.io/family-house/
+
 母と妻向けの、見るだけのハウス画面。今のハウスの状態・今月の収穫箱数・病気と害虫が出ている場所（マップの印をタップで名前と日付）。
 
 - 1 ファイル（`index.html`）・外部ライブラリなし・ログインなし（Supabase の公開用キーだけ）
+- **引き継ぎ書 → `HANDOFF.md`**（今の状態・触ってよい所・守ること）
 - デザインは Codex が仕上げる → `DESIGN_BRIEF.md`
 - ローカル: `python3 -m http.server 8790 --directory family-house`（`.claude/launch.json` の `family-house`）
 
 ## 使うデータ
 - ① `get_environment_recent`（環境モニターと同じ）
-- ① `get_harvest_month_summary` — **pepper-advisor の `supabase/migrations/0040_family_harvest_month.sql` を ① に流すまで「準備中」**
+- ① `get_harvest_month_summary`（pepper-advisor の 0040。2026-11-03 適用済み）
 - ② `croppings` / `pest_observations`（病害虫マップと同じ。読むだけ）
 
 ## 公開について
