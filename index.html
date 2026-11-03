@@ -6,90 +6,156 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://gjagzyexefnxnkbgueza.supabase.co https://jckjdfvoqsgqvhornnjs.supabase.co; base-uri 'none'; form-action 'none'">
-<meta name="theme-color" content="#2f6b3a">
+<meta name="theme-color" content="#f3f3f8">
 <title>ハウスのようす</title>
 <!--
-  家族向け ハウスのようす（試作・機能だけ）
+  家族向け ハウスのようす
   - 見るだけ。書き込みはしない。ログインなし（公開用キーだけ）
-  - デザインは Codex が仕上げる。DESIGN_BRIEF.md を参照
+  - 家族向けの丸ゴシックとカード表示。外部フォント・外部ライブラリなし
   - 判定の基準は 環境モニター (house-monitor/index.html) と同じ値。変えるときは両方
 -->
 <style>
   :root {
-    --bg: #f6f4ee; --card: #ffffff; --ink: #222; --sub: #666; --line: #e3dfd4;
-    --ok: #2f7d3a; --warn: #b26a00; --bad: #c0392b; --accent: #2f6b3a;
+    color-scheme: light dark;
+    --bg: #f3f3f8; --card: #fff; --ink: #293a35; --sub: #626d69; --line: #e5eae6;
+    --ok: #28724b; --warn: #9b590b; --bad: #b83e46; --accent: #357452;
+    --mint: #edf6ef; --peach: #fff2e9; --rose: #faeef1; --map: #f6f8f5;
+    --shadow: 0 5px 24px rgba(48,65,55,.055); --map-fill: #e6efe2; --map-line: #a5baa0; --aisle: #b9c6b2;
   }
   @media (prefers-color-scheme: dark) {
-    :root { --bg: #161814; --card: #22251f; --ink: #eee; --sub: #aaa; --line: #3a3d35; --ok: #6cc47a; --warn: #f0a640; --bad: #ff7a6b; --accent: #7fbf8a; }
+    :root {
+      --bg: #191e20; --card: #252d2d; --ink: #f1f4ee; --sub: #bbc7c0; --line: #404e49;
+      --ok: #95dbac; --warn: #ffd098; --bad: #ffacb3; --accent: #a0dbb4;
+      --mint: #2e4137; --peach: #44372d; --rose: #423139; --map: #202b25;
+      --shadow: 0 5px 24px rgba(0,0,0,.12); --map-fill: #354b37; --map-line: #819a78; --aisle: #64785b;
+    }
   }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font: 21px/1.7 system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif; }
-  main { max-width: 640px; margin: 0 auto; padding: 16px 16px 48px; }
-  h1 { font-size: 28px; margin: 4px 0 2px; }
-  h2 { font-size: 24px; margin: 0 0 8px; }
-  .updated { color: var(--sub); font-size: 18px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  button { font: inherit; }
-  .reload { border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 999px; padding: 8px 20px; font-size: 19px; }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; margin-top: 16px; }
-  .headline { font-size: 27px; font-weight: 700; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 21px/1.7 "Hiragino Maru Gothic ProN", "Hiragino Maru Gothic Pro", "BIZ UDGothic", "Yu Gothic", "Meiryo", sans-serif;
+    overflow-wrap: anywhere;
+  }
+  main { max-width: 560px; margin: 0 auto; padding: max(28px, env(safe-area-inset-top)) 16px max(48px, env(safe-area-inset-bottom)); }
+  .page-header { padding: 0 4px 8px; }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand-icon { width: 48px; height: 48px; flex: 0 0 auto; color: var(--accent); background: var(--mint); border-radius: 17px; padding: 9px; transform: rotate(-5deg); }
+  h1 { font-size: 28px; line-height: 1.5; letter-spacing: .015em; margin: 0; }
+  .intro { margin: 14px 0 18px; font-size: 18px; color: var(--sub); }
+  h2 { font-size: 24px; line-height: 1.5; margin: 0; letter-spacing: .01em; }
+  .section-head { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+  .section-icon { display: grid; place-items: center; width: 40px; height: 40px; flex: 0 0 auto; border-radius: 14px; background: var(--mint); font-size: 23px; }
+  #harvestCard .section-icon { background: var(--peach); }
+  #pestCard .section-icon { background: var(--rose); }
+  .updated { color: var(--sub); font-size: 18px; display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+  button { font: inherit; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  button:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; }
+  .reload { display: inline-flex; align-items: center; gap: 7px; min-height: 46px; border: 1px solid var(--line); background: var(--card); color: var(--accent); border-radius: 999px; padding: 7px 17px; font-size: 19px; }
+  .reload svg { width: 20px; height: 20px; }
+  .reload:disabled { opacity: .6; cursor: wait; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 24px; padding: 22px 20px; margin-top: 20px; box-shadow: var(--shadow); }
+  .headline { font-size: 27px; font-weight: 700; line-height: 1.65; border-radius: 16px; padding: 16px; background: var(--mint); }
+  .headline.warn { background: var(--peach); }
+  .headline.bad { background: var(--rose); }
   .headline.ok { color: var(--ok); } .headline.warn { color: var(--warn); } .headline.bad { color: var(--bad); }
-  .rows { display: grid; gap: 10px; margin-top: 12px; }
-  .row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
-  .row .label { color: var(--sub); }
-  .row .value { font-size: 28px; font-weight: 700; white-space: nowrap; }
+  #envNote { margin: 12px 2px 0; }
+  .rows { display: grid; gap: 0; margin-top: 10px; }
+  .row { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 10px 12px; border-top: 1px solid var(--line); padding: 20px 2px; }
+  .row:first-child { border-top: 0; }
+  .row:last-child { padding-bottom: 0; }
+  .row .label { color: var(--ink); font-weight: 700; }
+  .row .value { font-size: 34px; font-weight: 700; line-height: 1.4; white-space: nowrap; font-variant-numeric: tabular-nums; letter-spacing: -.03em; }
   .row .word { font-size: 20px; font-weight: 700; }
+  .row .detail { grid-column: 1 / -1; font-size: 18px; color: var(--sub); margin-top: -5px; }
   .ok { color: var(--ok); } .warn { color: var(--warn); } .bad { color: var(--bad); }
   .muted { color: var(--sub); font-size: 18px; }
-  .big { font-size: 56px; font-weight: 800; line-height: 1.1; }
-  .big small { font-size: 26px; font-weight: 700; }
-
-  /* 病害虫マップ */
-  .map-wrap { position: relative; width: 100%; aspect-ratio: 5 / 6; margin-top: 8px; }
+  #harvestCard { position: relative; overflow: hidden; }
+  .harvest-total { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 8px 4px 24px; }
+  .big { font-size: 64px; font-weight: 800; line-height: 1.2; letter-spacing: -.035em; font-variant-numeric: tabular-nums; }
+  .big small { font-size: 26px; font-weight: 700; letter-spacing: 0; }
+  .harvest-art { width: 88px; height: 88px; flex: 0 0 auto; color: var(--accent); }
+  #harvestNote { padding: 16px; background: var(--peach); border-radius: 16px; }
+  #harvestNote p { margin: 0; }
+  #harvestNote p + p { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+  #pestCard { padding-inline: 16px; }
+  #pestNote { margin-bottom: 20px; }
+  .map-wrap { position: relative; width: 100%; aspect-ratio: 5 / 6; margin-top: 12px; background: var(--map); border-radius: 16px; }
   .map-wrap svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-  .pin { position: absolute; width: 44px; height: 44px; margin: -22px 0 0 -22px; border: 0; padding: 0; background: transparent; display: grid; place-items: center; }
-  .pin span { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.4); display: grid; place-items: center; font-size: 13px; font-weight: 800; color: #fff; }
+  .pin { position: absolute; width: 44px; height: 44px; margin: -22px 0 0 -22px; border: 0; padding: 0; background: transparent; display: grid; place-items: center; border-radius: 50%; }
+  .pin span { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,.3); display: grid; place-items: center; font-size: 14px; font-weight: 800; color: #fff; text-shadow: 0 1px 3px #000; }
   .pin.old span { opacity: .5; }
-  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 12px; font-size: 19px; }
-  .legend i { display: inline-block; width: 16px; height: 16px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
-  .list { margin: 12px 0 0; padding: 0; list-style: none; }
-  .list li { border-top: 1px solid var(--line); padding: 10px 0; font-size: 19px; }
-
-  dialog { border: 0; border-radius: 16px; padding: 16px; width: min(92vw, 420px); background: var(--card); color: var(--ink); }
-  dialog::backdrop { background: rgba(0,0,0,.4); }
-  dialog h3 { margin: 0 0 8px; font-size: 23px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 10px 16px; margin-top: 20px; font-size: 19px; }
+  .legend i { display: inline-block; width: 16px; height: 16px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; border: 1px solid var(--sub); }
+  .records { margin-top: 24px; border-top: 1px solid var(--line); }
+  .records summary { cursor: pointer; padding: 16px 0 0; font-size: 21px; font-weight: 700; min-height: 48px; }
+  .list { margin: 16px 0 0; padding: 0; list-style: none; }
+  .list li + li { border-top: 1px solid var(--line); }
+  .record { width: 100%; text-align: left; color: var(--ink); background: transparent; border: 0; padding: 16px 0; font-size: 19px; line-height: 1.7; }
+  .record b { display: block; font-size: 21px; }
+  .record span { display: block; color: var(--sub); }
+  .page-footer { text-align: center; color: var(--sub); font-size: 18px; padding: 28px 0 0; }
+  dialog { border: 1px solid var(--line); border-radius: 24px; padding: 24px; width: min(92vw, 440px); max-height: 85dvh; background: var(--card); color: var(--ink); box-shadow: var(--shadow); }
+  dialog::backdrop { background: rgba(25,42,34,.5); backdrop-filter: blur(4px); }
+  dialog h3 { margin: 0 0 20px; font-size: 23px; }
   dialog ul { list-style: none; margin: 0; padding: 0; }
-  dialog li { border-top: 1px solid var(--line); padding: 10px 0; }
+  dialog li { border-top: 1px solid var(--line); padding: 16px 0; }
   dialog li b { font-size: 26px; }
-  dialog .close { margin-top: 12px; width: 100%; padding: 14px; font-size: 21px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+  dialog .close { margin-top: 16px; width: 100%; min-height: 54px; padding: 12px; font-size: 21px; border-radius: 16px; border: 1px solid var(--line); background: var(--mint); color: var(--accent); }
+  @media (max-width: 359px) {
+    main { padding-inline: 12px; }
+    .card { padding-inline: 16px; }
+    .section-head { gap: 8px; }
+    .section-icon { width: 32px; height: 36px; }
+    h2 { font-size: 24px; letter-spacing: -.04em; }
+    .harvest-art { width: 64px; height: 64px; }
+  }
 </style>
 </head>
 <body>
 <main>
-  <h1>ハウスのようす</h1>
-  <div class="updated"><span id="updated">読み込み中…</span><button class="reload" id="reload" type="button">更新</button></div>
+  <header class="page-header">
+    <div class="brand">
+      <svg class="brand-icon" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 27V13a12 12 0 0 1 24 0v14H4Z"/><path d="M16 3v24M4 15h24M16 22c-5 0-7-3-7-6 5 0 7 3 7 6Zm0-3c5 0 7-3 7-6-5 0-7 3-7 6Z"/></svg>
+      <h1>ハウスのようす</h1>
+    </div>
+    <p class="intro">今日のハウスを、ひと目で。</p>
+    <div class="updated"><span id="updated" role="status">読み込み中…</span><button class="reload" id="reload" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M6 7a7 7 0 0 1 12-1l2 6M4 12l2 6a7 7 0 0 0 12-1"/></svg>更新</button></div>
+  </header>
 
   <section class="card" id="envCard" aria-labelledby="envTitle">
-    <h2 id="envTitle">今のハウス</h2>
+    <div class="section-head"><span class="section-icon" aria-hidden="true">🌿</span><h2 id="envTitle">今のハウス</h2></div>
     <div class="headline" id="envHeadline">読み込み中…</div>
     <div class="muted" id="envNote"></div>
     <div class="rows" id="envRows"></div>
   </section>
 
   <section class="card" id="harvestCard" aria-labelledby="harvestTitle">
-    <h2 id="harvestTitle">今月の収穫</h2>
-    <div class="big" id="harvestBoxes">--</div>
+    <div class="section-head"><span class="section-icon" aria-hidden="true">🧺</span><h2 id="harvestTitle">今月の収穫</h2></div>
+    <div class="harvest-total">
+      <div class="big" id="harvestBoxes">--</div>
+      <svg class="harvest-art" viewBox="0 0 100 100" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="50" cy="50" r="45" fill="var(--peach)"/>
+        <path d="M34 44c-8-9-2-20 7-19 6-9 20-5 20 4 13 0 16 13 8 20" fill="var(--mint)" stroke="currentColor" stroke-width="2.5"/>
+        <path d="m48 43 3-19m0 9 10-6" stroke="currentColor" stroke-width="2.5"/>
+        <path d="m23 45 7 32c0 3 3 5 6 5h31c3 0 6-2 6-5l6-32H23Z" fill="var(--card)" stroke="currentColor" stroke-width="2.5"/>
+        <path d="M22 45h58M35 57l3 14m12-14v14m15-14-3 14" stroke="currentColor" stroke-width="2.5"/>
+        <path d="m79 19 1 5 5 1-5 1-1 5-1-5-5-1 5-1Z" fill="currentColor"/>
+      </svg>
+    </div>
     <div class="muted" id="harvestNote"></div>
   </section>
 
   <section class="card" id="pestCard" aria-labelledby="pestTitle">
-    <h2 id="pestTitle">病気・害虫の場所</h2>
+    <div class="section-head"><span class="section-icon" aria-hidden="true">🔎</span><h2 id="pestTitle">病気・害虫の場所</h2></div>
     <div class="muted" id="pestNote">読み込み中…</div>
     <div class="map-wrap" id="mapWrap">
       <svg id="mapSvg" viewBox="0 0 500 600" aria-hidden="true"></svg>
     </div>
     <div class="legend" id="legend"></div>
-    <ul class="list" id="pestList"></ul>
+    <details class="records"><summary>記録を一覧で見る</summary><ul class="list" id="pestList"></ul></details>
   </section>
+  <footer class="page-footer">🌱 いつものハウスを、家族で。</footer>
 </main>
 
 <dialog id="pinDialog" aria-labelledby="pinTitle">
@@ -270,10 +336,10 @@ function renderEnv(env) {
     const row = el('div', { class: 'row' });
     const left = el('div');
     left.append(el('div', { class: 'label' }, i.label));
-    if (i.detail) left.append(el('div', { class: 'muted' }, i.detail));
     const right = el('div', { style: 'text-align:right' });
     right.append(el('div', { class: 'value' }, i.value), el('div', { class: 'word ' + i.cls }, i.word));
     row.append(left, right);
+    if (i.detail) row.append(el('div', { class: 'detail' }, i.detail));
     rowsEl.append(row);
   }
 }
@@ -293,10 +359,8 @@ function renderHarvest(h) {
   big.replaceChildren();
   if (!h || h.pending) { big.textContent = '--'; note.textContent = '準備中です。'; return; }
   big.append(document.createTextNode(String(h.this_boxes ?? 0)), el('small', {}, ' 箱'));
-  const parts = [`${h.month}月の合計`];
-  if (h.last_recorded) parts.push(`${fmtDate(h.last_recorded)}まで`);
-  if (h.last_year_boxes != null) parts.push(`去年の${h.month}月は ${h.last_year_boxes}箱（1か月分）`);
-  note.textContent = parts.join('・');
+  note.replaceChildren(el('p', {}, `${h.month}月の合計${h.last_recorded ? `・${fmtDate(h.last_recorded)}まで` : ''}`));
+  if (h.last_year_boxes != null) note.append(el('p', {}, `去年の${h.month}月は ${h.last_year_boxes}箱（1か月分）`));
 }
 
 // ===== 病害虫マップ =====
@@ -343,12 +407,12 @@ function drawMapBase() {
   svg.append(svgEl('text', { x: MAP.left + MAP.width, y: 20, 'font-size': 22, 'text-anchor': 'end', fill: 'currentColor', opacity: .6 }, '東 →'));
   HOUSES.forEach(([, short], idx) => {
     const r = houseRect(idx);
-    svg.append(svgEl('rect', { x: r.x, y: r.y, width: r.w, height: r.h, rx: 6, fill: 'rgba(107,155,79,.18)', stroke: 'rgba(107,155,79,.6)' }));
+    svg.append(svgEl('rect', { x: r.x, y: r.y, width: r.w, height: r.h, rx: 14, fill: 'var(--map-fill)', stroke: 'var(--map-line)' }));
     svg.append(svgEl('text', { x: r.x + r.w / 2, y: r.y - 6, 'font-size': 27, 'font-weight': 700, 'text-anchor': 'middle', fill: 'currentColor' }, short));
-    svg.append(svgEl('rect', { x: r.x, y: r.y + r.h / 2 - 3, width: r.w, height: 6, fill: 'rgba(146,116,87,.5)' })); // 真ん中の通路
+    svg.append(svgEl('rect', { x: r.x, y: r.y + r.h / 2 - 3, width: r.w, height: 6, fill: 'var(--aisle)' })); // 真ん中の通路
     for (let a = 1; a <= 4; a++) {
       const x = aisleX(r, a);
-      svg.append(svgEl('line', { x1: x, y1: r.y + 4, x2: x, y2: r.y + r.h - 4, stroke: 'rgba(146,116,87,.35)', 'stroke-width': 3 }));
+      svg.append(svgEl('line', { x1: x, y1: r.y + 4, x2: x, y2: r.y + r.h - 4, stroke: 'var(--aisle)', 'stroke-width': 3 }));
     }
   });
   svg.append(svgEl('text', { x: MAP.left + MAP.width / 2, y: MAP.top + MAP.height + 20, 'font-size': 21, 'text-anchor': 'middle', fill: 'currentColor', opacity: .6 }, '上が入口側（前）'));
@@ -395,7 +459,10 @@ function renderPests({ crop, obs }) {
     $('legend').append(item);
   }
   for (const o of obs) {
-    $('pestList').append(el('li', {}, `${pestInfo(o).name}　${fmtDate(o.observed_at)}　${placeText(o)}`));
+    const button = el('button', { type: 'button', class: 'record' });
+    button.append(el('b', {}, pestInfo(o).name), el('span', {}, `見つけた日：${fmtDate(o.observed_at)}`), el('span', {}, placeText(o)));
+    button.addEventListener('click', () => openPin([o]));
+    const li = el('li'); li.append(button); $('pestList').append(li);
   }
 }
 
@@ -418,6 +485,7 @@ let loading = false;
 async function loadAll() {
   if (loading) return;
   loading = true;
+  $('reload').disabled = true;
   $('updated').textContent = '読み込み中…';
   const [env, harvest, pests] = await Promise.allSettled([loadEnv(), loadHarvest(), loadPests()]);
   if (env.status === 'fulfilled') renderEnv(env.value);
@@ -428,6 +496,7 @@ async function loadAll() {
   else { drawMapBase(); $('pestNote').textContent = '読み込めませんでした。'; }
   $('updated').textContent = `${fmtTime(Date.now())} に更新`;
   loading = false;
+  $('reload').disabled = false;
 }
 $('reload').addEventListener('click', loadAll);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') loadAll(); });
