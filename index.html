@@ -384,6 +384,8 @@ function pestInfo(o) {
   return { name: p ? p[0] : (o.pest_name || 'その他'), color: p ? p[1] : PESTS.other[1] };
 }
 function placeText(o) {
+  // 棟全体・全棟の記録は区画がない（pest-map の「この棟全体」「全棟」）
+  if (!o.aisle) return o._all ? '全部の棟の全体' : `${o.house}の全体`;
   const zone = o.section_zone === 'front' ? '前' : '後ろ';
   return `${o.house}・${AISLE_LABEL[o.aisle] || '通路'}・${zone}の${o.section_no}番目`;
 }
@@ -433,6 +435,20 @@ function renderPests({ crop, obs }) {
   if (!crop) { $('pestNote').textContent = '今の作付けが見つかりません。'; return; }
   if (!obs.length) { $('pestNote').textContent = '今は出ていません。'; return; }
 
+  // 棟全体・全棟の記録は印にせず、棟を薄く塗る。全棟は棟ごとの5行が同じ日時で入っている
+  const areaObs = obs.filter((o) => !o.aisle);
+  const areaCount = new Map();
+  for (const o of areaObs) { const k = `${o.pest_id}|${o.observed_at}`; areaCount.set(k, (areaCount.get(k) || 0) + 1); }
+  for (const o of areaObs) o._all = areaCount.get(`${o.pest_id}|${o.observed_at}`) >= HOUSES.length;
+  const svg = $('mapSvg');
+  for (const o of areaObs) {
+    const idx = HOUSES.findIndex(([db]) => db === o.house);
+    if (idx < 0) continue;
+    const r = houseRect(idx);
+    const color = pestInfo(o).color;
+    svg.append(svgEl('rect', { x: r.x + 2, y: r.y + 2, width: r.w - 4, height: r.h - 4, rx: 12, fill: color, 'fill-opacity': .18, stroke: color, 'stroke-width': 4 }));
+  }
+
   // 同じ場所の記録は 1 つの印にまとめる
   const groups = new Map();
   for (const o of obs) {
@@ -443,7 +459,8 @@ function renderPests({ crop, obs }) {
     groups.get(key).items.push(o);
   }
   const kinds = new Set(obs.map((o) => pestInfo(o).name));
-  $('pestNote').textContent = `${kinds.size}種類・${groups.size}か所。印をタップすると名前と日付が出ます。`;
+  const areaText = areaObs.length ? '色を塗った棟は、棟全体に出ています。' : '';
+  $('pestNote').textContent = `${kinds.size}種類${groups.size ? `・${groups.size}か所` : ''}。${areaText}印をタップすると名前と日付が出ます。`;
 
   const now = Date.now();
   for (const g of groups.values()) {
@@ -465,7 +482,10 @@ function renderPests({ crop, obs }) {
     item.append(dot, document.createTextNode(name));
     $('legend').append(item);
   }
+  const listed = new Set();
   for (const o of obs) {
+    // 全棟の記録は一覧に1回だけ出す
+    if (o._all) { const k = `${o.pest_id}|${o.observed_at}`; if (listed.has(k)) continue; listed.add(k); }
     const button = el('button', { type: 'button', class: 'record' });
     button.append(el('b', {}, pestInfo(o).name), el('span', {}, `見つけた日：${fmtDate(o.observed_at)}`), el('span', {}, placeText(o)));
     button.addEventListener('click', () => openPin([o]));
