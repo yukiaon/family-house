@@ -23,44 +23,44 @@
     :root { --bg: #161814; --card: #22251f; --ink: #eee; --sub: #aaa; --line: #3a3d35; --ok: #6cc47a; --warn: #f0a640; --bad: #ff7a6b; --accent: #7fbf8a; }
   }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font: 18px/1.6 system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 21px/1.7 system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif; }
   main { max-width: 640px; margin: 0 auto; padding: 16px 16px 48px; }
-  h1 { font-size: 24px; margin: 4px 0 2px; }
-  h2 { font-size: 20px; margin: 0 0 8px; }
-  .updated { color: var(--sub); font-size: 15px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  h1 { font-size: 28px; margin: 4px 0 2px; }
+  h2 { font-size: 24px; margin: 0 0 8px; }
+  .updated { color: var(--sub); font-size: 18px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   button { font: inherit; }
-  .reload { border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 999px; padding: 4px 14px; font-size: 15px; }
+  .reload { border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 999px; padding: 8px 20px; font-size: 19px; }
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; margin-top: 16px; }
-  .headline { font-size: 22px; font-weight: 700; }
+  .headline { font-size: 27px; font-weight: 700; }
   .headline.ok { color: var(--ok); } .headline.warn { color: var(--warn); } .headline.bad { color: var(--bad); }
   .rows { display: grid; gap: 10px; margin-top: 12px; }
   .row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
   .row .label { color: var(--sub); }
-  .row .value { font-size: 22px; font-weight: 700; white-space: nowrap; }
-  .row .word { font-size: 16px; font-weight: 700; }
+  .row .value { font-size: 28px; font-weight: 700; white-space: nowrap; }
+  .row .word { font-size: 20px; font-weight: 700; }
   .ok { color: var(--ok); } .warn { color: var(--warn); } .bad { color: var(--bad); }
-  .muted { color: var(--sub); font-size: 15px; }
-  .big { font-size: 44px; font-weight: 800; line-height: 1.1; }
-  .big small { font-size: 20px; font-weight: 700; }
+  .muted { color: var(--sub); font-size: 18px; }
+  .big { font-size: 56px; font-weight: 800; line-height: 1.1; }
+  .big small { font-size: 26px; font-weight: 700; }
 
   /* 病害虫マップ */
   .map-wrap { position: relative; width: 100%; aspect-ratio: 5 / 6; margin-top: 8px; }
   .map-wrap svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-  .pin { position: absolute; width: 36px; height: 36px; margin: -18px 0 0 -18px; border: 0; padding: 0; background: transparent; display: grid; place-items: center; }
-  .pin span { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.4); display: grid; place-items: center; font-size: 11px; font-weight: 800; color: #fff; }
+  .pin { position: absolute; width: 44px; height: 44px; margin: -22px 0 0 -22px; border: 0; padding: 0; background: transparent; display: grid; place-items: center; }
+  .pin span { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.4); display: grid; place-items: center; font-size: 13px; font-weight: 800; color: #fff; }
   .pin.old span { opacity: .5; }
-  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; font-size: 15px; }
-  .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 12px; font-size: 19px; }
+  .legend i { display: inline-block; width: 16px; height: 16px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
   .list { margin: 12px 0 0; padding: 0; list-style: none; }
-  .list li { border-top: 1px solid var(--line); padding: 8px 0; font-size: 16px; }
+  .list li { border-top: 1px solid var(--line); padding: 10px 0; font-size: 19px; }
 
   dialog { border: 0; border-radius: 16px; padding: 16px; width: min(92vw, 420px); background: var(--card); color: var(--ink); }
   dialog::backdrop { background: rgba(0,0,0,.4); }
-  dialog h3 { margin: 0 0 8px; font-size: 20px; }
+  dialog h3 { margin: 0 0 8px; font-size: 23px; }
   dialog ul { list-style: none; margin: 0; padding: 0; }
   dialog li { border-top: 1px solid var(--line); padding: 10px 0; }
-  dialog li b { font-size: 20px; }
-  dialog .close { margin-top: 12px; width: 100%; padding: 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+  dialog li b { font-size: 26px; }
+  dialog .close { margin-top: 12px; width: 100%; padding: 14px; font-size: 21px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
 </style>
 </head>
 <body>
@@ -82,7 +82,7 @@
   </section>
 
   <section class="card" id="pestCard" aria-labelledby="pestTitle">
-    <h2 id="pestTitle">病気・害虫が出ているところ</h2>
+    <h2 id="pestTitle">病気・害虫の場所</h2>
     <div class="muted" id="pestNote">読み込み中…</div>
     <div class="map-wrap" id="mapWrap">
       <svg id="mapSvg" viewBox="0 0 500 600" aria-hidden="true"></svg>
@@ -318,7 +318,7 @@ function placeText(o) {
 }
 
 // 図の寸法（viewBox 500×600）。前（入口側）が上、右端が東
-const MAP = { left: 10, top: 40, width: 480, height: 540, gap: 8 };
+const MAP = { left: 10, top: 62, width: 480, height: 510, gap: 8 };
 function houseRect(idx) {
   const w = (MAP.width - MAP.gap * 4) / 5;
   return { x: MAP.left + (w + MAP.gap) * idx, y: MAP.top, w, h: MAP.height };
@@ -339,19 +339,19 @@ function pinPos(o) {
 
 function drawMapBase() {
   const svg = $('mapSvg'); svg.replaceChildren();
-  svg.append(svgEl('text', { x: MAP.left, y: 16, 'font-size': 14, fill: 'currentColor', opacity: .6 }, '← 西'));
-  svg.append(svgEl('text', { x: MAP.left + MAP.width, y: 16, 'font-size': 14, 'text-anchor': 'end', fill: 'currentColor', opacity: .6 }, '東 →'));
+  svg.append(svgEl('text', { x: MAP.left, y: 20, 'font-size': 22, fill: 'currentColor', opacity: .6 }, '← 西'));
+  svg.append(svgEl('text', { x: MAP.left + MAP.width, y: 20, 'font-size': 22, 'text-anchor': 'end', fill: 'currentColor', opacity: .6 }, '東 →'));
   HOUSES.forEach(([, short], idx) => {
     const r = houseRect(idx);
     svg.append(svgEl('rect', { x: r.x, y: r.y, width: r.w, height: r.h, rx: 6, fill: 'rgba(107,155,79,.18)', stroke: 'rgba(107,155,79,.6)' }));
-    svg.append(svgEl('text', { x: r.x + r.w / 2, y: r.y - 8, 'font-size': 16, 'font-weight': 700, 'text-anchor': 'middle', fill: 'currentColor' }, short));
+    svg.append(svgEl('text', { x: r.x + r.w / 2, y: r.y - 6, 'font-size': 27, 'font-weight': 700, 'text-anchor': 'middle', fill: 'currentColor' }, short));
     svg.append(svgEl('rect', { x: r.x, y: r.y + r.h / 2 - 3, width: r.w, height: 6, fill: 'rgba(146,116,87,.5)' })); // 真ん中の通路
     for (let a = 1; a <= 4; a++) {
       const x = aisleX(r, a);
       svg.append(svgEl('line', { x1: x, y1: r.y + 4, x2: x, y2: r.y + r.h - 4, stroke: 'rgba(146,116,87,.35)', 'stroke-width': 3 }));
     }
   });
-  svg.append(svgEl('text', { x: MAP.left + MAP.width / 2, y: MAP.top + MAP.height + 16, 'font-size': 13, 'text-anchor': 'middle', fill: 'currentColor', opacity: .6 }, '上が入口側（前）'));
+  svg.append(svgEl('text', { x: MAP.left + MAP.width / 2, y: MAP.top + MAP.height + 20, 'font-size': 21, 'text-anchor': 'middle', fill: 'currentColor', opacity: .6 }, '上が入口側（前）'));
 }
 
 function renderPests({ crop, obs }) {
