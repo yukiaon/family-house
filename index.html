@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://gjagzyexefnxnkbgueza.supabase.co https://jckjdfvoqsgqvhornnjs.supabase.co; base-uri 'none'; form-action 'none'">
+<meta name="theme-color" content="#2f6b3a">
+<title>ハウスのようす</title>
+<!--
+  家族向け ハウスのようす（試作・機能だけ）
+  - 見るだけ。書き込みはしない。ログインなし（公開用キーだけ）
+  - デザインは Codex が仕上げる。DESIGN_BRIEF.md を参照
+  - 判定の基準は 環境モニター (house-monitor/index.html) と同じ値。変えるときは両方
+-->
+<style>
+  :root {
+    --bg: #f6f4ee; --card: #ffffff; --ink: #222; --sub: #666; --line: #e3dfd4;
+    --ok: #2f7d3a; --warn: #b26a00; --bad: #c0392b; --accent: #2f6b3a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #161814; --card: #22251f; --ink: #eee; --sub: #aaa; --line: #3a3d35; --ok: #6cc47a; --warn: #f0a640; --bad: #ff7a6b; --accent: #7fbf8a; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 18px/1.6 system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif; }
+  main { max-width: 640px; margin: 0 auto; padding: 16px 16px 48px; }
+  h1 { font-size: 24px; margin: 4px 0 2px; }
+  h2 { font-size: 20px; margin: 0 0 8px; }
+  .updated { color: var(--sub); font-size: 15px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  button { font: inherit; }
+  .reload { border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 999px; padding: 4px 14px; font-size: 15px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; margin-top: 16px; }
+  .headline { font-size: 22px; font-weight: 700; }
+  .headline.ok { color: var(--ok); } .headline.warn { color: var(--warn); } .headline.bad { color: var(--bad); }
+  .rows { display: grid; gap: 10px; margin-top: 12px; }
+  .row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+  .row .label { color: var(--sub); }
+  .row .value { font-size: 22px; font-weight: 700; white-space: nowrap; }
+  .row .word { font-size: 16px; font-weight: 700; }
+  .ok { color: var(--ok); } .warn { color: var(--warn); } .bad { color: var(--bad); }
+  .muted { color: var(--sub); font-size: 15px; }
+  .big { font-size: 44px; font-weight: 800; line-height: 1.1; }
+  .big small { font-size: 20px; font-weight: 700; }
+
+  /* 病害虫マップ */
+  .map-wrap { position: relative; width: 100%; aspect-ratio: 5 / 6; margin-top: 8px; }
+  .map-wrap svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .pin { position: absolute; width: 36px; height: 36px; margin: -18px 0 0 -18px; border: 0; padding: 0; background: transparent; display: grid; place-items: center; }
+  .pin span { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.4); display: grid; place-items: center; font-size: 11px; font-weight: 800; color: #fff; }
+  .pin.old span { opacity: .5; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; font-size: 15px; }
+  .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
+  .list { margin: 12px 0 0; padding: 0; list-style: none; }
+  .list li { border-top: 1px solid var(--line); padding: 8px 0; font-size: 16px; }
+
+  dialog { border: 0; border-radius: 16px; padding: 16px; width: min(92vw, 420px); background: var(--card); color: var(--ink); }
+  dialog::backdrop { background: rgba(0,0,0,.4); }
+  dialog h3 { margin: 0 0 8px; font-size: 20px; }
+  dialog ul { list-style: none; margin: 0; padding: 0; }
+  dialog li { border-top: 1px solid var(--line); padding: 10px 0; }
+  dialog li b { font-size: 20px; }
+  dialog .close { margin-top: 12px; width: 100%; padding: 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+</style>
+</head>
+<body>
+<main>
+  <h1>ハウスのようす</h1>
+  <div class="updated"><span id="updated">読み込み中…</span><button class="reload" id="reload" type="button">更新</button></div>
+
+  <section class="card" id="envCard" aria-labelledby="envTitle">
+    <h2 id="envTitle">今のハウス</h2>
+    <div class="headline" id="envHeadline">読み込み中…</div>
+    <div class="muted" id="envNote"></div>
+    <div class="rows" id="envRows"></div>
+  </section>
+
+  <section class="card" id="harvestCard" aria-labelledby="harvestTitle">
+    <h2 id="harvestTitle">今月の収穫</h2>
+    <div class="big" id="harvestBoxes">--</div>
+    <div class="muted" id="harvestNote"></div>
+  </section>
+
+  <section class="card" id="pestCard" aria-labelledby="pestTitle">
+    <h2 id="pestTitle">病気・害虫が出ているところ</h2>
+    <div class="muted" id="pestNote">読み込み中…</div>
+    <div class="map-wrap" id="mapWrap">
+      <svg id="mapSvg" viewBox="0 0 500 600" aria-hidden="true"></svg>
+    </div>
+    <div class="legend" id="legend"></div>
+    <ul class="list" id="pestList"></ul>
+  </section>
+</main>
+
+<dialog id="pinDialog" aria-labelledby="pinTitle">
+  <h3 id="pinTitle"></h3>
+  <ul id="pinItems"></ul>
+  <button class="close" id="pinClose" type="button">閉じる</button>
+</dialog>
+
+<script>
+'use strict';
+// ===== 接続先（公開用キーだけ。RLS / 公開関数の範囲しか読めない）=====
+// ① 環境・参謀（環境モニターと同じ）/ ② 病害虫（病害虫マップと同じ）
+const ENV_URL = 'https://gjagzyexefnxnkbgueza.supabase.co';
+const ENV_KEY = 'sb_publishable_xYtXkjyYBkBkIIdSc0WJEw_MwzCF7bK';
+const FARM_URL = 'https://jckjdfvoqsgqvhornnjs.supabase.co';
+const FARM_KEY = 'sb_publishable_BX-8YWYXbwl0WzscvcrRfA_mL9EZAXD';
+const STALE_MIN = 30;           // これより古いセンサー値は「止まっているかも」と出す
+const REFRESH_MS = 5 * 60 * 1000;
+
+// ===== 判定の基準（house-monitor/index.html の PEPPER_TARGETS・getSoilStatus と同じ値）=====
+const TARGETS = {
+  day:   { okMin: 25, okMax: 30, limit: 35 },
+  night: { okMin: 15, okMax: 20, limit: 12 },
+  humHigh: 90, humVeryHigh: 95, hdMax: 6,
+};
+// 南側の湿度補正。同じ値: house-monitor / pest-map / 参謀 env-targets.ts / 0023 SQL / kishaku-calc。変えるときは全部
+const SOUTH_HUM_OFFSET_UNTIL = '2026-10-17T07:50:00+09:00';
+function southHumOffset(recordedAt) {
+  return new Date(recordedAt) < new Date(SOUTH_HUM_OFFSET_UNTIL) ? 5 : 0;
+}
+const FARM_LAT = 31.9876, FARM_LON = 131.2916;
+
+// ===== 病害虫マップ（pest-map/index.html と同じ並び・色）=====
+const PESTS = {
+  udonko: ['うどんこ病', '#8b5a2b'], azamiuma: ['アザミウマ', '#e6b800'], hadani: ['ハダニ', '#ff3b30'],
+  aburamushi: ['アブラムシ', '#34c759'], konajirami: ['コナジラミ', '#5ac8fa'], yotoumushi: ['ヨトウムシ', '#a2845e'],
+  ootabakoga: ['オオタバコガ', '#ff9500'], hokoridani: ['チャノホコリダニ', '#ff6b9d'], aogare: ['青枯病', '#007aff'],
+  haiiro: ['灰色かび病', '#8e8e93'], kurogare: ['黒枯病', '#1c1c1e'], hanten: ['斑点病', '#6d4c41'],
+  tanso: ['炭疽病', '#c2410c'], ekibyou: ['疫病', '#5e5ce6'], kinkaku: ['菌核病', '#a1a1a6'],
+  saikin: ['斑点細菌病', '#7f8c3a'], mosaic: ['モザイク病', '#00c7be'], tswv: ['黄化えそ病', '#d4a017'],
+  other: ['その他', '#af52de'],
+};
+// 西 → 東（右端が東）。DB の house 名
+const HOUSES = [['西棟', '西'], ['西寄り棟', '西寄り'], ['中央棟', '中央'], ['東寄り棟', '東寄り'], ['東棟', '東']];
+const AISLE_LABEL = { 1: '谷下2', 2: '通路2', 3: '通路1', 4: '谷下1' };
+const SEVERITY = { low: '少し', mid: 'ふつう', high: '多い' };
+
+// ===== 共通 =====
+const $ = (id) => document.getElementById(id);
+function el(tag, attrs = {}, text) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  if (text != null) e.textContent = text;
+  return e;
+}
+function svgEl(tag, attrs = {}, text) {
+  const e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  if (text != null) e.textContent = text;
+  return e;
+}
+const jst = (ms) => new Date(ms + 9 * 3600000);
+function fmtDate(iso) { const d = jst(new Date(iso).getTime()); return `${d.getUTCMonth() + 1}月${d.getUTCDate()}日`; }
+function fmtTime(ms) { const d = jst(ms); return `${d.getUTCHours()}:${String(d.getUTCMinutes()).padStart(2, '0')}`; }
+const num = (v) => (v == null || v === '' || isNaN(Number(v)) ? null : Number(v));
+
+async function rpc(base, key, fn, body = {}, query = '') {
+  const res = await fetch(`${base}/rest/v1/rpc/${fn}${query}`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', apikey: key }, body: JSON.stringify(body), cache: 'no-store',
+  });
+  if (!res.ok) { const e = new Error('rpc ' + res.status); e.status = res.status; throw e; }
+  return res.json();
+}
+async function rest(base, key, path) {
+  const res = await fetch(`${base}/rest/v1/${path}`, { headers: { apikey: key }, cache: 'no-store' });
+  if (!res.ok) throw new Error('rest ' + res.status);
+  return res.json();
+}
+
+// ===== 昼か夜か（house-monitor の sunTimesJst と同じ NOAA 簡易式）=====
+function sunTimesJst(y, m, d) {
+  const rad = Math.PI / 180;
+  const n = Math.round((Date.UTC(y, m - 1, d) - Date.UTC(2000, 0, 1, 12)) / 86400000 + 0.5);
+  const Jstar = n - FARM_LON / 360;
+  const M = (357.5291 + 0.98560028 * Jstar) % 360;
+  const C = 1.9148 * Math.sin(M * rad) + 0.02 * Math.sin(2 * M * rad) + 0.0003 * Math.sin(3 * M * rad);
+  const lam = (M + C + 180 + 102.9372) % 360;
+  const Jtransit = 2451545 + Jstar + 0.0053 * Math.sin(M * rad) - 0.0069 * Math.sin(2 * lam * rad);
+  const dec = Math.asin(Math.sin(lam * rad) * Math.sin(23.44 * rad));
+  const cosH = (Math.sin(-0.833 * rad) - Math.sin(FARM_LAT * rad) * Math.sin(dec)) / (Math.cos(FARM_LAT * rad) * Math.cos(dec));
+  const H = Math.acos(Math.max(-1, Math.min(1, cosH))) / rad;
+  const toMs = (jd) => (jd - 2440587.5) * 86400000;
+  return { rise: toMs(Jtransit - H / 360), set: toMs(Jtransit + H / 360) };
+}
+function isDaytimeAt(ms) {
+  const j = jst(ms);
+  const s = sunTimesJst(j.getUTCFullYear(), j.getUTCMonth() + 1, j.getUTCDate());
+  return ms >= s.rise && ms < s.set;
+}
+function calcVPD(t, h) {
+  const es = 6.1078 * Math.pow(10, (7.5 * t) / (t + 237.3));
+  return 217 * es / (t + 273.15) * (1 - h / 100);
+}
+
+// ===== 家族向けの言葉に直す。戻り値 [ことば, 'ok'|'warn'|'bad'] =====
+function tempWord(t, isDay) {
+  const g = isDay ? TARGETS.day : TARGETS.night;
+  if (t >= TARGETS.day.limit) return ['とても暑い', 'bad'];
+  if (t <= TARGETS.night.limit) return ['とても寒い', 'bad'];
+  if (t > g.okMax) return [isDay ? '暑い' : '夜にしては暖かい', 'warn'];
+  if (t < g.okMin) return [isDay ? '少し低め' : '少し寒い', 'warn'];
+  return ['ちょうどいい', 'ok'];
+}
+function humWord(h, t) {
+  if (h >= TARGETS.humVeryHigh) return ['湿気がとても多い', 'bad'];
+  if (h >= TARGETS.humHigh) return ['湿気が多い', 'warn'];
+  if (t != null && calcVPD(t, h) > TARGETS.hdMax) return ['乾いている', 'warn'];
+  return ['ちょうどいい', 'ok'];
+}
+function soilWord(s) {
+  if (s >= 95) return ['水が多すぎ', 'bad'];
+  if (s >= 90) return ['水がやや多め', 'warn'];
+  if (s >= 65) return ['ちょうどいい', 'ok'];
+  if (s >= 45) return ['やや乾き気味', 'warn'];
+  return ['乾いている', 'bad'];
+}
+const RANK = { ok: 0, warn: 1, bad: 2 };
+
+// ===== 今のハウス =====
+async function loadEnv() {
+  const rows = await rpc(ENV_URL, ENV_KEY, 'get_environment_recent', { p_hours: 1 }, '?limit=200'); // 新しい順
+  const pick = (dev, col) => rows.find((r) => r.device_id === dev && r[col] != null);
+  const n = pick('esp32_01', 'temperature_c'), s = pick('esp32_02', 'temperature_c');
+  const nh = pick('esp32_01', 'humidity_pct'), sh = pick('esp32_02', 'humidity_pct');
+  const soil = pick('esp32_03', 'soil_moisture_pct');
+  const temps = [n, s].filter(Boolean).map((r) => num(r.temperature_c));
+  const hums = [nh && num(nh.humidity_pct), sh && Math.min(100, num(sh.humidity_pct) + southHumOffset(sh.recorded_at))].filter((v) => v != null);
+  const latest = Math.max(0, ...rows.map((r) => new Date(r.recorded_at).getTime()));
+  return {
+    temp: temps.length ? temps.reduce((a, b) => a + b, 0) / temps.length : null,
+    tempN: n ? num(n.temperature_c) : null, tempS: s ? num(s.temperature_c) : null,
+    hum: hums.length ? Math.max(...hums) : null,   // 湿気は高い方で見る（病気は高い側で出る）
+    soil: soil ? num(soil.soil_moisture_pct) : null,
+    at: latest || null,
+  };
+}
+function renderEnv(env) {
+  const rowsEl = $('envRows'); rowsEl.replaceChildren();
+  const now = Date.now();
+  if (!env || !env.at) {
+    $('envHeadline').textContent = 'センサーの値が届いていません';
+    $('envHeadline').className = 'headline warn';
+    $('envNote').textContent = 'この1時間、記録がありません。';
+    return;
+  }
+  const isDay = isDaytimeAt(now);
+  const items = [];
+  if (env.temp != null) {
+    const [w, c] = tempWord(env.temp, isDay);
+    const detail = env.tempN != null && env.tempS != null ? `北 ${env.tempN.toFixed(1)}℃・南 ${env.tempS.toFixed(1)}℃` : '';
+    items.push({ label: '気温', value: `${env.temp.toFixed(1)}℃`, word: w, cls: c, detail });
+  }
+  if (env.hum != null) { const [w, c] = humWord(env.hum, env.temp); items.push({ label: '湿度', value: `${Math.round(env.hum)}%`, word: w, cls: c }); }
+  if (env.soil != null) { const [w, c] = soilWord(env.soil); items.push({ label: '土の水分', value: `${Math.round(env.soil)}%`, word: w, cls: c }); }
+
+  const worst = items.reduce((m, i) => Math.max(m, RANK[i.cls]), 0);
+  const cls = ['ok', 'warn', 'bad'][worst];
+  // 「湿気が多い」「土が乾いている」のように、ことばだけで分かる形にする
+  const phrase = (i) => (i.label !== '土の水分' ? i.word : i.word.startsWith('水') ? `土の${i.word}` : `土が${i.word}`);
+  const bad = items.filter((i) => i.cls !== 'ok').map(phrase);
+  $('envHeadline').className = 'headline ' + cls;
+  $('envHeadline').textContent = worst === 0 ? 'ちょうどいい状態です' : bad.join('・');
+  const ageMin = Math.round((now - env.at) / 60000);
+  $('envNote').textContent = (isDay ? '昼' : '夜') + 'の目安で見ています。' +
+    (ageMin > STALE_MIN ? ` センサーの更新が止まっているかもしれません（最後 ${fmtTime(env.at)}）。` : ` ${fmtTime(env.at)} の値`);
+
+  for (const i of items) {
+    const row = el('div', { class: 'row' });
+    const left = el('div');
+    left.append(el('div', { class: 'label' }, i.label));
+    if (i.detail) left.append(el('div', { class: 'muted' }, i.detail));
+    const right = el('div', { style: 'text-align:right' });
+    right.append(el('div', { class: 'value' }, i.value), el('div', { class: 'word ' + i.cls }, i.word));
+    row.append(left, right);
+    rowsEl.append(row);
+  }
+}
+
+// ===== 今月の収穫（0040 get_harvest_month_summary）=====
+async function loadHarvest() {
+  try {
+    const rows = await rpc(ENV_URL, ENV_KEY, 'get_harvest_month_summary');
+    return rows[0] || null;
+  } catch (e) {
+    if (e.status === 404) return { pending: true };   // 0040 が未適用
+    throw e;
+  }
+}
+function renderHarvest(h) {
+  const big = $('harvestBoxes'), note = $('harvestNote');
+  big.replaceChildren();
+  if (!h || h.pending) { big.textContent = '--'; note.textContent = '準備中です。'; return; }
+  big.append(document.createTextNode(String(h.this_boxes ?? 0)), el('small', {}, ' 箱'));
+  const parts = [`${h.month}月の合計`];
+  if (h.last_recorded) parts.push(`${fmtDate(h.last_recorded)}まで`);
+  if (h.last_year_boxes != null) parts.push(`去年の${h.month}月は ${h.last_year_boxes}箱（1か月分）`);
+  note.textContent = parts.join('・');
+}
+
+// ===== 病害虫マップ =====
+async function loadPests() {
+  const crops = await rest(FARM_URL, FARM_KEY, 'croppings?select=id,name&is_active=eq.true&order=start_date.desc,created_at.desc&limit=1');
+  if (!crops.length) return { crop: null, obs: [] };
+  const id = encodeURIComponent(crops[0].id);
+  const obs = await rest(FARM_URL, FARM_KEY,
+    `pest_observations?select=id,observed_at,house,aisle,section_zone,section_no,pest_id,pest_name,severity&cropping_id=eq.${id}&resolved_at=is.null&order=observed_at.desc&limit=500`);
+  return { crop: crops[0], obs };
+}
+function pestInfo(o) {
+  const p = PESTS[o.pest_id];
+  return { name: p ? p[0] : (o.pest_name || 'その他'), color: p ? p[1] : PESTS.other[1] };
+}
+function placeText(o) {
+  const zone = o.section_zone === 'front' ? '前' : '後ろ';
+  return `${o.house}・${AISLE_LABEL[o.aisle] || '通路'}・${zone}の${o.section_no}番目`;
+}
+
+// 図の寸法（viewBox 500×600）。前（入口側）が上、右端が東
+const MAP = { left: 10, top: 40, width: 480, height: 540, gap: 8 };
+function houseRect(idx) {
+  const w = (MAP.width - MAP.gap * 4) / 5;
+  return { x: MAP.left + (w + MAP.gap) * idx, y: MAP.top, w, h: MAP.height };
+}
+// 棟の中の通路の位置（pest-map の drawSingleHouseMini と同じ比率: 通路0.9・畝1.5）
+function aisleX(r, aisle) {
+  const total = 4 * 0.9 + 3 * 1.5;
+  const a = (r.w * 0.9) / total, c = (r.w * 1.5) / total;
+  return r.x + a / 2 + (aisle - 1) * (a + c);
+}
+function pinPos(o) {
+  const idx = HOUSES.findIndex(([db]) => db === o.house);
+  if (idx < 0 || !AISLE_LABEL[o.aisle] || !o.section_no) return null;
+  const r = houseRect(idx);
+  const dist = o.section_zone === 'front' ? (o.section_no / 19) * 50 : 50 + (o.section_no / 19) * 50; // pest-map と同じ
+  return { x: aisleX(r, o.aisle), y: r.y + r.h * Math.min(dist, 99) / 100 };
+}
+
+function drawMapBase() {
+  const svg = $('mapSvg'); svg.replaceChildren();
+  svg.append(svgEl('text', { x: MAP.left, y: 16, 'font-size': 14, fill: 'currentColor', opacity: .6 }, '← 西'));
+  svg.append(svgEl('text', { x: MAP.left + MAP.width, y: 16, 'font-size': 14, 'text-anchor': 'end', fill: 'currentColor', opacity: .6 }, '東 →'));
+  HOUSES.forEach(([, short], idx) => {
+    const r = houseRect(idx);
+    svg.append(svgEl('rect', { x: r.x, y: r.y, width: r.w, height: r.h, rx: 6, fill: 'rgba(107,155,79,.18)', stroke: 'rgba(107,155,79,.6)' }));
+    svg.append(svgEl('text', { x: r.x + r.w / 2, y: r.y - 8, 'font-size': 16, 'font-weight': 700, 'text-anchor': 'middle', fill: 'currentColor' }, short));
+    svg.append(svgEl('rect', { x: r.x, y: r.y + r.h / 2 - 3, width: r.w, height: 6, fill: 'rgba(146,116,87,.5)' })); // 真ん中の通路
+    for (let a = 1; a <= 4; a++) {
+      const x = aisleX(r, a);
+      svg.append(svgEl('line', { x1: x, y1: r.y + 4, x2: x, y2: r.y + r.h - 4, stroke: 'rgba(146,116,87,.35)', 'stroke-width': 3 }));
+    }
+  });
+  svg.append(svgEl('text', { x: MAP.left + MAP.width / 2, y: MAP.top + MAP.height + 16, 'font-size': 13, 'text-anchor': 'middle', fill: 'currentColor', opacity: .6 }, '上が入口側（前）'));
+}
+
+function renderPests({ crop, obs }) {
+  drawMapBase();
+  const wrap = $('mapWrap');
+  wrap.querySelectorAll('.pin').forEach((p) => p.remove());
+  $('legend').replaceChildren(); $('pestList').replaceChildren();
+  if (!crop) { $('pestNote').textContent = '今の作付けが見つかりません。'; return; }
+  if (!obs.length) { $('pestNote').textContent = '今は出ていません。'; return; }
+
+  // 同じ場所の記録は 1 つの印にまとめる
+  const groups = new Map();
+  for (const o of obs) {
+    const pos = pinPos(o);
+    if (!pos) continue;
+    const key = `${o.house}|${o.aisle}|${o.section_zone}|${o.section_no}`;
+    if (!groups.has(key)) groups.set(key, { pos, items: [] });
+    groups.get(key).items.push(o);
+  }
+  const kinds = new Set(obs.map((o) => pestInfo(o).name));
+  $('pestNote').textContent = `${kinds.size}種類・${groups.size}か所。印をタップすると名前と日付が出ます。`;
+
+  const now = Date.now();
+  for (const g of groups.values()) {
+    const first = g.items[0]; // 新しい順
+    const info = pestInfo(first);
+    const old = (now - new Date(first.observed_at).getTime()) > 30 * 86400000;
+    const btn = el('button', { type: 'button', class: 'pin' + (old ? ' old' : ''),
+      style: `left:${(g.pos.x / 500) * 100}%;top:${(g.pos.y / 600) * 100}%`,
+      'aria-label': `${placeText(first)}：${g.items.map((o) => pestInfo(o).name).join('、')}` });
+    const dot = el('span', { style: `background:${info.color}` }, g.items.length > 1 ? String(g.items.length) : '');
+    btn.append(dot);
+    btn.addEventListener('click', () => openPin(g.items));
+    wrap.append(btn);
+  }
+
+  for (const name of kinds) {
+    const color = Object.values(PESTS).find(([n]) => n === name)?.[1] || PESTS.other[1];
+    const item = el('span'); const dot = el('i', { style: `background:${color}` });
+    item.append(dot, document.createTextNode(name));
+    $('legend').append(item);
+  }
+  for (const o of obs) {
+    $('pestList').append(el('li', {}, `${pestInfo(o).name}　${fmtDate(o.observed_at)}　${placeText(o)}`));
+  }
+}
+
+function openPin(items) {
+  $('pinTitle').textContent = placeText(items[0]);
+  const ul = $('pinItems'); ul.replaceChildren();
+  for (const o of items) {
+    const li = el('li');
+    li.append(el('b', {}, pestInfo(o).name), el('div', {}, `見つけた日：${fmtDate(o.observed_at)}`));
+    if (SEVERITY[o.severity]) li.append(el('div', { class: 'muted' }, `量：${SEVERITY[o.severity]}`));
+    ul.append(li);
+  }
+  $('pinDialog').showModal();
+}
+$('pinClose').addEventListener('click', () => $('pinDialog').close());
+$('pinDialog').addEventListener('click', (e) => { if (e.target === e.currentTarget) e.currentTarget.close(); });
+
+// ===== 読み込み =====
+let loading = false;
+async function loadAll() {
+  if (loading) return;
+  loading = true;
+  $('updated').textContent = '読み込み中…';
+  const [env, harvest, pests] = await Promise.allSettled([loadEnv(), loadHarvest(), loadPests()]);
+  if (env.status === 'fulfilled') renderEnv(env.value);
+  else { $('envHeadline').textContent = '読み込めませんでした'; $('envHeadline').className = 'headline warn'; $('envNote').textContent = '電波を確かめて「更新」を押してください。'; }
+  if (harvest.status === 'fulfilled') renderHarvest(harvest.value);
+  else { $('harvestBoxes').textContent = '--'; $('harvestNote').textContent = '読み込めませんでした。'; }
+  if (pests.status === 'fulfilled') renderPests(pests.value);
+  else { drawMapBase(); $('pestNote').textContent = '読み込めませんでした。'; }
+  $('updated').textContent = `${fmtTime(Date.now())} に更新`;
+  loading = false;
+}
+$('reload').addEventListener('click', loadAll);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') loadAll(); });
+setInterval(() => { if (document.visibilityState === 'visible') loadAll(); }, REFRESH_MS);
+loadAll();
+</script>
+</body>
+</html>
