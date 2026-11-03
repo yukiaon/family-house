@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- 全面を塗る（Android のマスク・iOS の角丸どちらでも切れない）。図はヘッダーの brand-icon と同じ -->
+  <rect width="512" height="512" fill="#357452"/>
+  <g transform="translate(256 262) scale(11) translate(-16 -15)" fill="none" stroke="#ffffff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 27V13a12 12 0 0 1 24 0v14H4Z"/>
+    <path d="M16 3v24M4 15h24M16 22c-5 0-7-3-7-6 5 0 7 3 7 6Zm0-3c5 0 7-3 7-6-5 0-7 3-7 6Z"/>
+  </g>
+</svg>

@@ -8,6 +8,13 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://gjagzyexefnxnkbgueza.supabase.co https://jckjdfvoqsgqvhornnjs.supabase.co; base-uri 'none'; form-action 'none'">
 <meta name="theme-color" content="#f3f3f8">
 <title>ハウスのようす</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ハウス">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <!--
   家族向け ハウスのようす
   - 見るだけ。書き込みはしない。ログインなし（公開用キーだけ）
@@ -502,6 +509,11 @@ $('reload').addEventListener('click', loadAll);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') loadAll(); });
 setInterval(() => { if (document.visibilityState === 'visible') loadAll(); }, REFRESH_MS);
 loadAll();
+
+// ホーム画面に追加して使えるように（画面だけを端末に置く。データは置かない → sw.js）
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+}
 </script>
 </body>
 </html>

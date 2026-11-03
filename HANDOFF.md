@@ -25,7 +25,7 @@
 | 機能 | 3 つとも本番データで動作確認済み（375px・横スクロールなし・コンソールエラーなし） |
 | デザイン | **完了**: 環境モニターと共通の淡い背景・白いカード、丸ゴシック・ミント/桃色・かごの SVG |
 | 実機確認 | **未**（母・妻のスマホ） |
-| ホーム画面追加 | 未（manifest・アイコンなし。任意） |
+| ホーム画面追加（PWA） | 済（2026-11-03）。`manifest.webmanifest`・`icons/`・`sw.js`。画面だけ端末に置き、データは置かない |
 
 ## 3. ファイル
 
@@ -34,7 +34,10 @@ family-house/
 ├── index.html       ★全部入り（CSS + HTML + JS、約 440 行、外部ライブラリなし）
 ├── DESIGN_BRIEF.md  Codex へのデザイン依頼（変えてよい所・変えない所）
 ├── HANDOFF.md       このファイル
-└── README.md
+├── README.md
+├── manifest.webmanifest  PWA（名前「ハウスのようす」・ホーム画面では「ハウス」）
+├── sw.js            service worker。画面だけ端末に置く（Supabase のデータは置かない）。**画面のファイルを増やしたら SHELL に足し、CACHE の版を上げる**
+└── icons/           icon.svg（元）→ icon-192 / icon-512（maskable 兼用）/ apple-touch-icon（180）
 ```
 
 ローカル確認:
@@ -91,7 +94,7 @@ python3 -m http.server 8790 --directory ~/Documents/ai-workspace/agri-apps/famil
 
 1. **Codex**: デザイン仕上げ・320/375/430px のライト/ダーク表示を確認済み。main に反映し、公開ページも確認する
 2. **オーナー**: 母・妻のスマホで開いてもらい、文字の大きさ・分かりやすさを聞く
-3. （任意）ホーム画面に追加できるように manifest とアイコン
+3. ~~ホーム画面に追加できるように manifest とアイコン~~ 済（PWA）
 4. （気になる点）日誌の持ち主は「最後に日誌を書いた人」で決めている。日誌を書く人が増えたら 0040 を見直す
 
 ## 9. 作業を終えたら
