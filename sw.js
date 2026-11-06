@@ -4,7 +4,7 @@
 // - 画面は「まずネット → だめなら端末の分」。直したら次に開いたときに新しい画面になる
 // - GitHub Pages はブラウザに 10 分ためさせるので、いつもサーバーに確かめる（no-cache。変わっていなければ小さい返事で済む）
 // 画面のファイルを増やしたら SHELL に足し、CACHE の版を上げる
-const CACHE = 'family-house-v3';
+const CACHE = 'family-house-v4';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {

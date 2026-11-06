@@ -123,6 +123,30 @@
     h2 { font-size: 24px; letter-spacing: -.04em; }
     .harvest-art { width: 64px; height: 64px; }
   }
+  /* タブレット（768px〜）: 今のハウスと収穫を横に並べ、マップはその下に大きく。スマホ（〜767px）は上のまま */
+  @media (min-width: 768px) {
+    main { max-width: 940px; padding-inline: 28px;
+      display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 24px;
+      grid-template-areas: "head head" "env harvest" "pest pest" "foot foot"; }
+    .page-header { grid-area: head; display: flex; align-items: center; justify-content: space-between; gap: 12px 24px; flex-wrap: wrap; padding-bottom: 0; }
+    .page-header .intro { margin: 0; flex: 1 1 auto; }
+    #envCard { grid-area: env; } #harvestCard { grid-area: harvest; } #pestCard { grid-area: pest; } .page-footer { grid-area: foot; padding-top: 4px; }
+    .card { margin-top: 0; padding: 26px 26px; }
+    #pestCard { padding-inline: 26px; }
+    .map-wrap { max-width: 600px; margin-inline: auto; }
+    .list { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); column-gap: 28px; }
+    .list li + li { border-top: 0; }
+    .list li { border-top: 1px solid var(--line); }
+    .list li:nth-child(-n+2) { border-top: 0; }
+    .big { font-size: 72px; }
+  }
+  /* PC（1024px〜）: 左に今のハウスと収穫を縦に、右にマップを大きく */
+  @media (min-width: 1024px) {
+    main { max-width: 1240px; padding-inline: 40px; gap: 28px; align-items: start;
+      grid-template-columns: minmax(0,1fr) minmax(0,1.3fr);
+      grid-template-areas: "head head" "env pest" "harvest pest" "foot foot"; grid-template-rows: auto auto 1fr auto; }
+    .map-wrap { max-width: none; }
+  }
 </style>
 </head>
 <body>
