@@ -226,6 +226,13 @@ function southHumOffset(recordedAt) {
 }
 const FARM_LAT = 31.9876, FARM_LON = 131.2916;
 
+// ===== 反収目標（参謀 config/yield-target.ts と同じ考え方）=====
+// 今月の目標の箱数 = 去年の同じ月の箱数 × この倍率。
+// 倍率 = 目標 18t/10a ÷ 去年の反収（JA の帳票の 10a当・26.3a）。参謀の「反収目標までの目安」の全体の倍率と同じ値。
+// 目標や去年の実績が変わったら、参謀のカードに出る倍率に合わせて直す。
+// ※参謀は先月までの遅れ・先行も入れて計算し直すので、月によって数箱ずれることがある
+const TARGET = { label: '18t', ratio: 1.061 };
+
 // ===== 病害虫マップ（pest-map/index.html と同じ並び・色）=====
 const PESTS = {
   udonko: ['うどんこ病', '#8b5a2b'], azamiuma: ['アザミウマ', '#e6b800'], hadani: ['ハダニ', '#ff3b30'],
@@ -399,6 +406,23 @@ function renderHarvest(h) {
   big.append(document.createTextNode(String(h.this_boxes ?? 0)), el('small', {}, ' 箱'));
   note.replaceChildren(el('p', {}, `${h.month}月の合計${h.last_recorded ? `・${fmtDate(h.last_recorded)}まで` : ''}`));
   if (h.last_year_boxes != null) note.append(el('p', {}, `去年の${h.month}月は ${h.last_year_boxes}箱（1か月分）`));
+  // 目標（18t）まであと何箱。去年の値が JA の実績から出ているときだけ（倍率がその前提なので）
+  if (h.last_year_boxes != null && h.last_year_source === 'ja') {
+    const goal = Math.round(h.last_year_boxes * TARGET.ratio);
+    const left = goal - (h.this_boxes ?? 0);
+    const now = jst(Date.now());
+    const daysInMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)).getUTCDate();
+    const daysLeft = Math.max(1, daysInMonth - now.getUTCDate() + 1);   // 今日を含む
+    const p = el('p');
+    p.append(document.createTextNode(`目標（${TARGET.label}）は ${goal}箱`), el('br'));
+    if (left > 0) {
+      p.append(el('b', {}, `あと ${left}箱`));
+      p.append(document.createTextNode(`（残り${daysLeft}日で 1日 約${(left / daysLeft).toFixed(1)}箱）`));
+    } else {
+      p.append(el('b', {}, `目標を ${-left}箱 こえました`));
+    }
+    note.append(p);
+  }
 }
 
 // ===== 病害虫マップ =====
