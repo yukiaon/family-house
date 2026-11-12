@@ -551,10 +551,26 @@ function openPin(items) {
     if (SEVERITY[o.severity]) li.append(el('div', { class: 'muted' }, `量：${SEVERITY[o.severity]}`));
     ul.append(li);
   }
+  if ($('pinDialog').open) return;
   $('pinDialog').showModal();
+  history.pushState({ fh: 1, pin: true }, ''); // 戻る (スワイプ) で閉じられるように履歴を1つ積む。URL・データは入れない
 }
 $('pinClose').addEventListener('click', () => $('pinDialog').close());
 $('pinDialog').addEventListener('click', (e) => { if (e.target === e.currentTarget) e.currentTarget.close(); });
+
+// ===== Android の戻る (スワイプ) =====
+// 戻るでは開いている記録の詳しい画面を閉じる。開いていなければ従来どおりアプリを抜ける。
+// 閉じる・背景タップ・Esc で閉じたときは history.back() で積んだ分を戻し、戻るが空振りしないようにする。
+// (Android Chrome は戻るでダイアログを直接閉じることがあるので、それも close イベントで拾う)
+const isPinState = (s) => !!s && s.fh === 1 && s.pin === true;
+history.replaceState({ fh: 1, pin: false }, '');
+window.addEventListener('popstate', (e) => {
+  // 前の読み込み時の履歴など形が違うときも、詳しい画面は閉じる
+  if (!isPinState(e.state) && $('pinDialog').open) $('pinDialog').close();
+});
+$('pinDialog').addEventListener('close', () => {
+  if (isPinState(history.state)) history.back();
+});
 
 // ===== 読み込み =====
 let loading = false;
